@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Fiber Building — Orange Sonatel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12213B; --ink-soft:#3E4C68; --paper:#F3F5F1; --paper-line:#DBE0D9; --panel:#FFFFFF;
+    --orange:#FF7900; --orange-deep:#D9600A; --fiber:#0FBFA8; --fiber-soft:#DFF6F1;
+    --danger:#E1543E; --radius:14px; --shadow:0 10px 30px -14px rgba(18,33,59,0.18);
+    --mono:'IBM Plex Mono', monospace; --disp:'Space Grotesk', sans-serif; --body:'Inter', sans-serif;
+  }
+  body.dark{
+    --ink:#EAF0F6; --ink-soft:#96A6BE; --paper:#0D1626; --paper-line:#233047; --panel:#141F33;
+    --fiber-soft:#0F2A28; --shadow:0 10px 30px -14px rgba(0,0,0,0.5);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--body); color:var(--ink);
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px) 0 0/28px 100%,
+      var(--paper);
+    min-height:100vh; transition:background-color .25s ease, color .25s ease;
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;} }
+  ::selection{background:var(--fiber-soft); color:var(--ink);}
+  svg.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block;}
+  button, input, select, textarea{font-family:var(--body);}
+  button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible{outline:2px solid var(--fiber);outline-offset:2px;}
+
+  .shell{max-width:1260px;margin:0 auto;padding:20px 20px 60px;}
+
+  /* ---------- topbar ---------- */
+  .topbar{display:flex;align-items:center;gap:14px;background:var(--ink);border-radius:var(--radius);
+    padding:12px 16px;color:#fff;margin-bottom:16px;box-shadow:var(--shadow);position:relative;z-index:30;}
+  body.dark .topbar{background:#0A1220;border:1px solid var(--paper-line);}
+  .brand{display:flex;align-items:center;gap:10px;flex:none;}
+  .brand-text{display:flex;flex-direction:column;line-height:1.15;}
+  .brand-text b{font-family:var(--disp);font-size:17px;}
+  .brand-text span{font-family:var(--mono);font-size:9.5px;color:var(--fiber);letter-spacing:1.2px;text-transform:uppercase;}
+
+  .search-wrap{position:relative;flex:1;max-width:380px;}
+  .search-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);
+    border-radius:10px;padding:8px 12px;color:#cfd8e6;}
+  .search-box input{background:none;border:none;color:#fff;font-size:12.5px;width:100%;outline:none;}
+  .search-box input::placeholder{color:#8b9ab1;}
+  .search-results{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--panel);border:1px solid var(--paper-line);
+    border-radius:12px;box-shadow:var(--shadow);overflow:hidden;display:none;max-height:280px;overflow-y:auto;z-index:40;}
+  .search-results.show{display:block;}
+  .search-results .sr-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--paper-line);color:var(--ink);}
+  .search-results .sr-item:last-child{border-bottom:none;}
+  .search-results .sr-item:hover{background:var(--paper);}
+  .search-results .sr-item b{display:block;font-size:12.5px;}
+  .search-results .sr-item span{font-size:10.5px;color:var(--ink-soft);font-family:var(--mono);}
+  .search-empty{padding:14px;font-size:12px;color:var(--ink-soft);}
+
+  .top-actions{display:flex;align-items:center;gap:6px;margin-left:auto;flex:none;}
+  .icon-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#fff;width:34px;height:34px;
+    border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;flex:none;transition:background .15s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.16);}
+  .icon-btn .badge{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--orange);border:1.5px solid var(--ink);}
+  .notif-panel{position:absolute;top:calc(100% + 8px);right:0;width:300px;background:var(--panel);border:1px solid var(--paper-line);
+    border-radius:12px;box-shadow:var(--shadow);display:none;z-index:40;overflow:hidden;}
+  .notif-panel.show{display:block;}
+  .notif-panel .np-head{padding:12px 14px;font-family:var(--disp);font-size:13px;border-bottom:1px solid var(--paper-line);color:var(--ink);}
+  .notif-item{padding:11px 14px;border-bottom:1px dashed var(--paper-line);display:flex;gap:9px;align-items:flex-start;}
+  .notif-item:last-child{border-bottom:none;}
+  .notif-item .dot2{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:none;}
+  .notif-item p{margin:0;font-size:12px;color:var(--ink);line-height:1.4;}
+  .notif-item span{font-size:10px;color:var(--ink-soft);font-family:var(--mono);}
+
+  .profile-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);
+    border-radius:999px;padding:5px 12px 5px 6px;font-size:12px;flex:none;}
+  .profile-pill .dot{width:22px;height:22px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;}
+  .profile-pill button{background:none;border:none;color:#cfe9e4;font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0;margin-left:2px;}
+
+  /* ---------- layout ---------- */
+  .layout{display:grid;grid-template-columns:196px 1fr;gap:16px;}
+  @media (max-width:860px){ .layout{grid-template-columns:1fr;} .rail{position:static;order:2;} .search-wrap{display:none;} }
+  .rail{background:var(--panel);border:1px solid var(--paper-line);border-radius:var(--radius);padding:9px;height:max-content;
+    position:sticky;top:18px;box-shadow:var(--shadow);}
+  .rail button{width:100%;text-align:left;background:none;border:none;padding:10px 11px;border-radius:10px;font-weight:600;font-size:12.5px;
+    color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:2px;transition:background .15s,color .15s;}
+  .rail button:hover{background:var(--paper);}
+  .rail button.active{background:var(--ink);color:#fff;}
+  body.dark .rail button.active{background:var(--fiber);color:#06231f;}
+  .rail button.active svg.ic{stroke:var(--fiber);}
+  body.dark .rail button.active svg.ic{stroke:#06231f;}
+  .rail hr{border:none;border-top:1px solid var(--paper-line);margin:8px 4px;}
+
+  .view{display:none;animation:fade .22s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .card{background:var(--panel);border:1px solid var(--paper-line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--fiber);margin:0 0 6px;}
+  h1.page-title{font-family:var(--disp);font-size:24px;margin:0 0 6px;}
+  .lede{color:var(--ink-soft);font-size:13.5px;margin:0 0 20px;max-width:660px;line-height:1.55;}
+
+  /* hub */
+  .hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:700px){.hub-grid{grid-template-columns:1fr;}}
+  .hub-tile{border:1.5px solid var(--paper-line);border-radius:14px;padding:20px;cursor:pointer;background:var(--panel);
+    display:flex;gap:14px;align-items:flex-start;transition:border-color .15s, transform .15s, box-shadow .15s;text-align:left;color:var(--ink);}
+  .hub-tile:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:var(--shadow);}
+  .hub-tile .icwrap{width:42px;height:42px;border-radius:10px;background:var(--paper);display:flex;align-items:center;justify-content:center;flex:none;color:var(--orange-deep);}
+  .hub-tile b{display:block;font-family:var(--disp);font-size:15px;margin-bottom:3px;}
+  .hub-tile small{color:var(--ink-soft);font-size:11.5px;}
+  .hub-tile .arrow{margin-left:auto;color:var(--paper-line);}
+
+  /* profile grid */
+  .profile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media (max-width:720px){.profile-grid{grid-template-columns:repeat(2,1fr);}}
+  .profile-card{border:1.5px dashed var(--paper-line);border-radius:12px;padding:16px 14px;background:var(--paper);cursor:pointer;
+    text-align:left;transition:border-color .15s, transform .15s;color:var(--ink);}
+  .profile-card:hover{border-color:var(--orange);transform:translateY(-2px);}
+  .profile-card .icwrap2{width:34px;height:34px;border-radius:9px;background:var(--panel);display:flex;align-items:center;justify-content:center;margin-bottom:10px;color:var(--orange-deep);}
+  .profile-card b{display:block;font-size:13.5px;margin-bottom:4px;}
+  .profile-card small{color:var(--ink-soft);font-size:11.5px;line-height:1.4;display:block;}
+
+  /* form */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:640px){.form-grid{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.full{grid-column:1/-1;}
+  .field label{font-size:11.5px;font-weight:600;color:var(--ink-soft);}
+  .field label .req{color:var(--orange);}
+  .field input,.field select,.field textarea{border:1.5px solid var(--paper-line);border-radius:9px;padding:10px 12px;font-size:13px;
+    background:var(--panel);color:var(--ink);}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--fiber);outline-offset:1px;border-color:var(--fiber);}
+  .field.mono input{font-family:var(--mono);}
+  .context-note{display:flex;gap:10px;align-items:flex-start;background:var(--fiber-soft);border:1px solid var(--fiber);border-radius:10px;
+    padding:12px 14px;margin-bottom:20px;font-size:12.5px;color:var(--fiber);}
+  body.dark .context-note{color:#7fe3d3;}
+  .lot-block{border:1.5px dashed var(--paper-line);border-radius:12px;padding:14px;margin-top:10px;background:var(--paper);}
+  .lot-block-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .lot-block-head b{font-family:var(--disp);font-size:13.5px;}
+  .rm-btn{background:none;border:none;color:var(--danger);font-size:11px;cursor:pointer;}
+  .add-btn{background:none;border:1.5px dashed var(--orange);color:var(--orange-deep);border-radius:8px;padding:8px 12px;
+    font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .add-btn:hover{background:var(--fiber-soft);}
+  .btn-primary{background:var(--orange);color:#fff;border:none;border-radius:10px;padding:12px 22px;
+    font-family:var(--disp);font-weight:600;font-size:13.5px;cursor:pointer;margin-top:18px;display:inline-flex;align-items:center;gap:8px;transition:transform .1s, background .15s;}
+  .btn-primary:hover{background:var(--orange-deep);}
+  .btn-primary:active{transform:scale(0.98);}
+  .btn-ghost{background:none;border:1.5px solid var(--paper-line);color:var(--ink-soft);border-radius:10px;padding:11px 18px;
+    font-weight:600;font-size:13px;cursor:pointer;margin-top:18px;margin-right:10px;}
+  .success-box{display:none;text-align:center;padding:40px 20px;}
+  .success-box.show{display:block;animation:fade .3s ease;}
+  .success-box .ring{width:56px;height:56px;border-radius:50%;background:var(--fiber-soft);color:var(--fiber);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+  .success-box h3{font-family:var(--disp);margin:0 0 6px;}
+  .success-box p{color:var(--ink-soft);font-size:13px;margin:0 0 4px;}
+  .success-box .idtag{font-family:var(--mono);background:var(--paper);border:1px solid var(--paper-line);border-radius:8px;
+    padding:6px 12px;display:inline-block;margin-top:10px;font-size:12.5px;}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+  .toolbar input, .toolbar select{border:1.5px solid var(--paper-line);border-radius:9px;padding:9px 12px;font-size:12.5px;background:var(--panel);color:var(--ink);}
+  .toolbar input{flex:1;min-width:170px;}
+  .toolbar .clear{background:var(--ink);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer;}
+  body.dark .toolbar .clear{background:var(--fiber);color:#06231f;}
+  .view-toggle{display:inline-flex;background:var(--paper);border:1px solid var(--paper-line);border-radius:9px;padding:3px;margin-left:auto;}
+  .view-toggle button{border:none;background:none;padding:7px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
+  .view-toggle button.active{background:var(--ink);color:#fff;}
+  body.dark .view-toggle button.active{background:var(--fiber);color:#06231f;}
+
+  .lot-card{border:1px solid var(--paper-line);border-radius:var(--radius);background:var(--panel);margin-bottom:12px;overflow:hidden;}
+  .lot-summary{display:flex;align-items:center;gap:14px;padding:15px 17px;cursor:pointer;}
+  .lot-summary .blueprint{width:46px;height:46px;border-radius:8px;background:var(--ink);position:relative;flex:none;
+    background-image:linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size:8px 8px;}
+  .lot-summary .blueprint::after{content:"";position:absolute;inset:9px;border:1.5px solid var(--fiber);border-radius:3px;}
+  .lot-summary .meta{flex:1;min-width:0;}
+  .lot-summary .meta b{font-family:var(--disp);font-size:14.5px;display:block;}
+  .lot-summary .meta span{font-size:11px;color:var(--ink-soft);font-family:var(--mono);}
+  .status-pill{font-size:10.5px;font-weight:700;padding:5px 11px;border-radius:999px;white-space:nowrap;}
+  .status-livre{background:#E3F6E9;color:#1E7B45;}
+  .status-cours{background:#FFF1DE;color:#B15900;}
+  .status-nouvelle{background:#EAEDF3;color:#3E4C68;}
+  .status-prise{background:#E7F0FB;color:#2456A6;}
+  body.dark .status-livre{background:#123626;color:#4FDB93;}
+  body.dark .status-cours{background:#3A2A12;color:#FFB238;}
+  body.dark .status-nouvelle{background:#1C2740;color:#9FB0C9;}
+  body.dark .status-prise{background:#122A42;color:#6FB2F5;}
+  .chev{color:var(--ink-soft);font-size:13px;transition:transform .2s;}
+  .lot-card.open .chev{transform:rotate(90deg);}
+  .lot-body{max-height:0;overflow:hidden;transition:max-height .25s ease;border-top:1px solid var(--paper-line);}
+  .lot-card.open .lot-body{max-height:900px;}
+  .bldg-row{display:flex;align-items:center;gap:14px;padding:13px 17px;border-bottom:1px dashed var(--paper-line);cursor:pointer;}
+  .bldg-row:hover{background:var(--paper);}
+  .bldg-row:last-child{border-bottom:none;}
+  .bldg-row .addr{flex:1;min-width:0;}
+  .bldg-row .addr b{font-size:12.5px;display:block;}
+  .bldg-row .addr span{font-size:10.5px;color:var(--ink-soft);font-family:var(--mono);}
+  .stepper{display:flex;align-items:center;gap:4px;}
+  .stepper .seg{width:20px;height:5px;border-radius:3px;background:var(--paper-line);}
+  .stepper .seg.done{background:var(--fiber);}
+  .stepper .seg.active{background:var(--orange);}
+  .step-label{font-size:10px;color:var(--ink-soft);font-family:var(--mono);min-width:112px;text-align:right;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+  .empty-state svg.ic{width:34px;height:34px;margin-bottom:10px;stroke:var(--paper-line);}
+
+  /* map view */
+  .map-wrap{position:relative;border:1px solid var(--paper-line);border-radius:14px;overflow:hidden;background:var(--ink);height:340px;}
+  .map-wrap svg{width:100%;height:100%;display:block;}
+  .map-pin-label{position:absolute;background:var(--panel);color:var(--ink);font-size:10.5px;padding:4px 8px;border-radius:6px;
+    box-shadow:var(--shadow);pointer-events:none;white-space:nowrap;transform:translate(-50%,-135%);font-family:var(--mono);}
+
+  /* drawer */
+  .overlay{position:fixed;inset:0;background:rgba(10,16,28,0.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .overlay.show{display:flex;}
+  .drawer{background:var(--panel);border-radius:16px;max-width:480px;width:100%;padding:24px;max-height:86vh;overflow:auto;box-shadow:var(--shadow);}
+  .drawer-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .drawer-head b{font-family:var(--disp);font-size:17px;}
+  .drawer-head button{background:var(--paper);border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;}
+  .fiche-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--paper-line);font-size:12.5px;gap:12px;}
+  .fiche-row:last-child{border-bottom:none;}
+  .fiche-row b{color:var(--ink-soft);font-weight:600;}
+  .fiche-row span{font-family:var(--mono);text-align:right;}
+  .timeline{margin-top:16px;}
+  .timeline h4{font-family:var(--disp);font-size:12.5px;margin:0 0 10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.6px;}
+  .tl-item{display:flex;gap:10px;padding-bottom:14px;position:relative;}
+  .tl-item::before{content:"";position:absolute;left:5px;top:16px;bottom:-2px;width:1px;background:var(--paper-line);}
+  .tl-item:last-child::before{display:none;}
+  .tl-dot{width:11px;height:11px;border-radius:50%;background:var(--fiber);flex:none;margin-top:3px;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--fiber);}
+  .tl-item p{margin:0;font-size:12px;}
+  .tl-item span{font-size:10px;color:var(--ink-soft);font-family:var(--mono);}
+
+  .switcher{display:inline-flex;background:var(--paper);border:1px solid var(--paper-line);border-radius:999px;padding:4px;margin-bottom:18px;}
+  .switcher button{border:none;background:none;padding:8px 17px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);}
+  .switcher button.active{background:var(--ink);color:#fff;}
+  body.dark .switcher button.active{background:var(--fiber);color:#06231f;}
+  .split{display:grid;grid-template-columns:270px 1fr;gap:16px;}
+  @media (max-width:760px){.split{grid-template-columns:1fr;}}
+  .req-list{border:1px solid var(--paper-line);border-radius:12px;overflow:hidden;height:max-content;}
+  .req-item{padding:12px 14px;border-bottom:1px solid var(--paper-line);cursor:pointer;}
+  .req-item:last-child{border-bottom:none;}
+  .req-item:hover{background:var(--paper);}
+  .req-item.sel{background:var(--ink);}
+  body.dark .req-item.sel{background:var(--fiber);}
+  .req-item.sel b, .req-item.sel span{color:#fff !important;}
+  body.dark .req-item.sel b, body.dark .req-item.sel span{color:#06231f !important;}
+  .req-item b{display:block;font-size:12.5px;}
+  .req-item span{font-size:10.5px;color:var(--ink-soft);font-family:var(--mono);}
+  .kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--paper-line);border:1px solid var(--paper-line);border-radius:12px;overflow:hidden;}
+  @media (max-width:640px){.kv-grid{grid-template-columns:1fr;}}
+  .kv{background:var(--panel);padding:12px 15px;}
+  .kv label{display:block;font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-bottom:4px;}
+  .kv div{font-size:13px;font-family:var(--mono);}
+  .client-card{background:var(--fiber-soft);border:1px solid var(--fiber);border-radius:12px;padding:20px;max-width:420px;}
+  .client-card h3{margin:0 0 4px;font-family:var(--disp);font-size:16.5px;}
+  .client-card p{margin:0 0 16px;font-size:12px;color:var(--fiber);}
+  body.dark .client-card p{color:#7fe3d3;}
+  .save-row{display:flex;gap:10px;margin-top:16px;}
+  .btn-danger{background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .btn-save{background:var(--fiber);border:none;color:#06231f;border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;}
+
+  .qr-wrap{display:grid;grid-template-columns:210px 1fr;gap:24px;align-items:start;}
+  @media (max-width:700px){.qr-wrap{grid-template-columns:1fr;}}
+  .qr-box{background:var(--ink);border-radius:16px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .qr-box span{color:var(--fiber);font-family:var(--mono);font-size:10.5px;letter-spacing:1px;}
+  .qr-box button{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:7px 12px;border-radius:8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .fiche{border:1px solid var(--paper-line);border-radius:12px;padding:16px 18px;background:var(--paper);}
+  .log-line{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);padding:6px 0;border-bottom:1px dashed var(--paper-line);font-family:var(--mono);}
+  .log-line:last-child{border-bottom:none;}
+  .badge-ok{background:#E3F6E9;color:#1E7B45;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  body.dark .badge-ok{background:#123626;color:#4FDB93;}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  @media (max-width:760px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+  .kpi{border:1px solid var(--paper-line);border-radius:12px;padding:16px;background:var(--panel);}
+  .kpi .val{font-family:var(--disp);font-size:25px;}
+  .kpi .lbl{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .kpi .trend{font-size:10.5px;color:var(--fiber);font-family:var(--mono);margin-top:6px;}
+  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  @media (max-width:820px){.dash-grid{grid-template-columns:1fr;}}
+  .panel-box{border:1px solid var(--paper-line);border-radius:14px;padding:18px;background:var(--panel);}
+  .panel-box h4{font-family:var(--disp);font-size:14px;margin:0 0 14px;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+  .bar-row .lbl{width:130px;font-size:11.5px;color:var(--ink-soft);flex:none;}
+  .bar-track{flex:1;height:10px;background:var(--paper);border-radius:6px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;background:var(--orange);transition:width .6s ease;}
+  .bar-row .n{font-family:var(--mono);font-size:11px;width:26px;text-align:right;flex:none;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:11px;color:var(--ink-soft);}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .zone-list .zrow{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--paper-line);font-size:12px;gap:10px;}
+  .zone-list .zrow:last-child{border-bottom:none;}
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  .donut-legend div{display:flex;align-items:center;gap:7px;font-size:11.5px;margin-bottom:7px;color:var(--ink-soft);}
+  .donut-legend i{width:9px;height:9px;border-radius:2px;flex:none;}
+
+  footer.foot{margin-top:24px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--ink-soft);letter-spacing:0.4px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="topbar">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="14" stroke="#FF7900" stroke-width="2"/>
+        <path d="M9 19L14 9L14 14L21 14L16 21" stroke="#0FBFA8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="brand-text"><b>Fiber Building</b><span>Orange Sonatel</span></div>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="globalSearch" placeholder="Rechercher un lot, une plaque, un n°…" oninput="onGlobalSearch()" onfocus="onGlobalSearch()">
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="top-actions">
+      <button class="icon-btn" onclick="toggleDark()" title="Thème">
+        <svg class="ic" id="themeIcon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 1 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+      <button class="icon-btn" onclick="toggleNotif()" title="Notifications">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+        <span class="badge"></span>
+      </button>
+      <div class="notif-panel" id="notifPanel">
+        <div class="np-head">Notifications</div>
+        <div class="notif-item"><span class="dot2" style="background:var(--fiber)"></span><div><p><b>Lot 1 — Cité Douane</b> entièrement livré</p><span>il y a 2 h</span></div></div>
+        <div class="notif-item"><span class="dot2" style="background:var(--orange)"></span><div><p>Nouvelle demande reçue — <b>Cité Keur Gorgui</b></p><span>hier, 09:14</span></div></div>
+        <div class="notif-item"><span class="dot2" style="background:#2456A6"></span><div><p>QR consulté par l'agent APIX — Moussa Diop</p><span>03/07 09:14</span></div></div>
+      </div>
+      <div class="profile-pill" id="profilePill">
+        <span class="dot" id="profileIcon">?</span>
+        <span id="profileLabel">Fatou Fall</span>
+        <button onclick="goTo('accueil')">changer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <nav class="rail" id="rail"></nav>
+
+    <main>
+
+      <section class="view" id="view-accueil">
+        <div class="card">
+          <p class="eyebrow">Point d'entrée</p>
+          <h1 class="page-title">Bonjour Fatou FALL,</h1>
+          <p class="lede">Gérez vos demandes de fibrage en toute simplicité. Six espaces, un seul outil.</p>
+          <div class="hub-grid" id="hubGrid"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-profil">
+        <div class="card">
+          <p class="eyebrow">Étape 1 sur 2</p>
+          <h1 class="page-title">Qui êtes-vous ?</h1>
+          <p class="lede">Ce choix détermine les champs du formulaire, le vocabulaire employé et la manière dont vos demandes seront regroupées à l'écran de suivi.</p>
+          <div class="profile-grid" id="profileGrid"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-demande">
+        <div class="card">
+          <div id="demandeForm">
+            <p class="eyebrow">Étape 2 sur 2</p>
+            <h1 class="page-title">Soumettre une demande</h1>
+            <div class="context-note" id="contextNote"></div>
+
+            <div class="form-grid">
+              <div class="field"><label>Nom du demandeur <span class="req">*</span></label><input placeholder="Ex. Fatou Fall"></div>
+              <div class="field"><label>Téléphone mobile <span class="req">*</span></label><input placeholder="77 XXX XX XX"></div>
+              <div class="field full"><label>Email <span class="req">*</span></label><input placeholder="nom@domaine.com"></div>
+            </div>
+
+            <div id="dynamicFields" style="margin-top:6px;"></div>
+
+            <div class="form-grid" style="margin-top:16px;">
+              <div class="field"><label>Type de demande</label>
+                <select><option>Nouvelle ligne</option><option>Extension de réseau</option><option>Réparation</option></select>
+              </div>
+              <div class="field"><label>Pièces jointes</label><input type="file"></div>
+              <div class="field full"><label>Commentaires</label><textarea rows="2" placeholder="Précisions utiles au traitement"></textarea></div>
+            </div>
+
+            <button class="btn-ghost" onclick="goTo('profil')">← Changer de profil</button>
+            <button class="btn-primary" onclick="submitDemande()">
+              <svg class="ic" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#fff"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              Envoyer la demande
+            </button>
+          </div>
+          <div class="success-box" id="successBox">
+            <div class="ring"><svg class="ic" viewBox="0 0 24 24" style="width:26px;height:26px;stroke:var(--fiber)"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <h3>Demande envoyée</h3>
+            <p>Elle apparaît désormais dans « Suivre mes demandes », avec le statut Nouvelle.</p>
+            <span class="idtag" id="successId">DEMANDE #A-2231</span><br>
+            <button class="btn-primary" onclick="goTo('suivi')">Voir le suivi →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-suivi">
+        <div class="card">
+          <p class="eyebrow">Vue demandeur</p>
+          <h1 class="page-title">Suivre mes demandes</h1>
+          <p class="lede">Chaque lot regroupe les immeubles livrés ensemble. Basculez entre la vue liste et la vue carte pour visualiser la répartition géographique.</p>
+          <div class="toolbar">
+            <input id="suiviSearch" placeholder="Rechercher un lot, un immeuble ou un n° de demande" oninput="renderSuiviView()">
+            <select id="suiviFilter" onchange="renderSuiviView()">
+              <option value="">Tous les statuts</option>
+              <option value="nouvelle">Nouvelle</option>
+              <option value="prise">Prise en charge</option>
+              <option value="cours">Travaux en cours</option>
+              <option value="livre">Immeuble livré</option>
+            </select>
+            <button class="clear" onclick="document.getElementById('suiviSearch').value='';document.getElementById('suiviFilter').value='';renderSuiviView();">Effacer les filtres</button>
+            <div class="view-toggle">
+              <button class="active" id="vt-list" onclick="setSuiviMode('list')">
+                <svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Liste
+              </button>
+              <button id="vt-map" onclick="setSuiviMode('map')">
+                <svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M9 20l-5-2V4l5 2 6-2 5 2v14l-5-2-6 2Z"/><path d="M9 6v14M15 4v14"/></svg>Carte
+              </button>
+            </div>
+          </div>
+          <div id="lotsContainer"></div>
+          <div id="mapContainer" style="display:none;"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-traitement">
+        <div class="card">
+          <p class="eyebrow">Vue agent EDOC</p>
+          <h1 class="page-title">Traitement des demandes</h1>
+          <p class="lede">Une seule base de données, deux vues : l'équipe EDOC travaille sur la vue interne, le demandeur ne voit que la vue client — sans ressaisie.</p>
+          <div class="switcher">
+            <button class="active" id="btn-interne" onclick="setTraitementMode('interne')">Vue interne</button>
+            <button id="btn-client" onclick="setTraitementMode('client')">Vue client</button>
+          </div>
+          <div class="toolbar">
+            <input id="traitSearch" placeholder="Rechercher un n° de demande ou un nom d'immeuble" oninput="renderTraitementList()">
+          </div>
+          <div class="split">
+            <div class="req-list" id="traitList"></div>
+            <div id="traitDetail"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-qr">
+        <div class="card">
+          <p class="eyebrow">Vue APIX / Agents du Domaine</p>
+          <h1 class="page-title">Accès terrain via QR code</h1>
+          <p class="lede">Chaque demande génère un QR code. Un agent APIX ou des Impôts et du Domaine le scanne au moment d'instruire une autorisation de travaux, et retrouve instantanément la fiche associée, en lecture seule.</p>
+          <div class="qr-wrap">
+            <div class="qr-box">
+              <svg width="140" height="140" viewBox="0 0 150 150"><rect width="150" height="150" fill="#fff" rx="6"/><g fill="#12213B">
+                <rect x="10" y="10" width="34" height="34"/><rect x="18" y="18" width="18" height="18" fill="#fff"/><rect x="24" y="24" width="6" height="6" fill="#12213B"/>
+                <rect x="106" y="10" width="34" height="34"/><rect x="114" y="18" width="18" height="18" fill="#fff"/><rect x="120" y="24" width="6" height="6" fill="#12213B"/>
+                <rect x="10" y="106" width="34" height="34"/><rect x="18" y="114" width="18" height="18" fill="#fff"/><rect x="24" y="120" width="6" height="6" fill="#12213B"/>
+                <rect x="54" y="10" width="6" height="6"/><rect x="66" y="10" width="6" height="6"/><rect x="78" y="18" width="6" height="6"/><rect x="54" y="26" width="6" height="6"/>
+                <rect x="90" y="54" width="6" height="6"/><rect x="102" y="54" width="6" height="6"/><rect x="54" y="54" width="6" height="6"/><rect x="66" y="66" width="6" height="6"/>
+                <rect x="78" y="78" width="6" height="6"/><rect x="90" y="90" width="6" height="6"/><rect x="106" y="66" width="6" height="6"/><rect x="118" y="78" width="6" height="6"/>
+                <rect x="54" y="90" width="6" height="6"/><rect x="54" y="106" width="6" height="6"/><rect x="66" y="118" width="6" height="6"/><rect x="90" y="118" width="6" height="6"/>
+                <rect x="106" y="106" width="6" height="6"/><rect x="118" y="118" width="6" height="6"/><rect x="130" y="90" width="6" height="6"/><rect x="130" y="66" width="6" height="6"/>
+              </g></svg>
+              <span>DEMANDE #A-2214</span>
+              <button onclick="window.print()">
+                <svg class="ic" style="width:13px;height:13px;stroke:#fff" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2M6 14h12v7H6z"/></svg>
+                Imprimer la fiche
+              </button>
+            </div>
+            <div class="fiche">
+              <div class="fiche-row"><b>Immeuble</b><span>Résidence Almadies B2</span></div>
+              <div class="fiche-row"><b>Lot / Programme</b><span>Cité Douane — Guédiawaye</span></div>
+              <div class="fiche-row"><b>Coordonnées GPS</b><span>14.7167 N, -17.4677 W</span></div>
+              <div class="fiche-row"><b>Statut fibrage</b><span class="badge-ok">Travaux en cours</span></div>
+              <div class="fiche-row"><b>Cohérence programme</b><span class="badge-ok">Conforme</span></div>
+            </div>
+          </div>
+          <h4 style="font-family:var(--disp);font-size:14px;margin:22px 0 10px;">Journal des consultations</h4>
+          <div class="panel-box">
+            <div class="log-line"><span>Agent APIX — Moussa Diop</span><span>03/07/2026 09:14</span></div>
+            <div class="log-line"><span>Agent du Domaine — Aïda Sarr</span><span>28/06/2026 15:02</span></div>
+            <div class="log-line"><span>Agent APIX — Moussa Diop</span><span>14/06/2026 11:47</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-dashboard">
+        <div class="card">
+          <p class="eyebrow">Vue Direction</p>
+          <h1 class="page-title">Tableau de bord</h1>
+          <p class="lede">Vue consolidée par profil de demandeur, par lot et par zone d'aménagement.</p>
+
+          <div class="kpi-grid">
+            <div class="kpi"><div class="val">128</div><div class="lbl">Demandes actives</div><div class="trend">+14 cette semaine</div></div>
+            <div class="kpi"><div class="val">19</div><div class="lbl">Lots en cours</div><div class="trend">7 livrés ce trimestre</div></div>
+            <div class="kpi"><div class="val">S13</div><div class="lbl">Délai moyen de livraison</div><div class="trend">-2 semaines vs objectif</div></div>
+            <div class="kpi"><div class="val">42</div><div class="lbl">Consultations QR (30j)</div><div class="trend">APIX + Domaine</div></div>
+          </div>
+
+          <div class="dash-grid">
+            <div class="panel-box">
+              <h4>Demandes par profil de demandeur</h4>
+              <div id="barChart"></div>
+            </div>
+            <div class="panel-box">
+              <h4>Avancement des lots</h4>
+              <div id="donutChart"></div>
+            </div>
+          </div>
+          <div class="panel-box">
+            <h4>Zones d'aménagement suivies</h4>
+            <div class="zone-list" id="zoneList"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="foot">ORANGE SONATEL · DR / EDOC / DIRECTION / DEFIX — Maquette de cadrage · non contractuelle</footer>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this) closeDrawer()">
+  <div class="drawer" id="drawerContent"></div>
+</div>
+
+<script>
+/* ---------------------------- ICONS ---------------------------- */
+const ICON = {
+  home:'<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h4v-6h2v6h4a1 1 0 0 0 1-1v-9"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  list:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+  tool:'<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l1 1 5.3-5.3a4 4 0 0 1 5.4-5.4L19 4l-2 2 1 1 2-2 1 3-3 3-1-1Z"/>',
+  qr:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14v3M14 19h3M19 19h1"/>',
+  chart:'<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>',
+  user:'<circle cx="12" cy="8" r="3.2"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/>',
+};
+function svgIcon(name, size){ return `<svg class="ic" style="width:${size||18}px;height:${size||18}px" viewBox="0 0 24 24">${ICON[name]}</svg>`; }
+
+/* ---------------------------- DATA ---------------------------- */
+const PROFILES = [
+  {id:'particulier', ic:'user', label:'Particulier / Résident', note:"Formulaire réduit à une adresse et un logement. Suivi : une seule demande, sans notion de lot."},
+  {id:'bailleur', ic:'home', label:'Bailleur', note:"Le formulaire demande l'immeuble complet et le nombre d'appartements. Suivi organisé par immeuble loué."},
+  {id:'promoteur', ic:'tool', label:'Promoteur immobilier', note:"Le formulaire s'ouvre sur la notion de lot : plusieurs immeubles livrés ensemble (ex. Senedindia, Kalia). Suivi par lot → liste d'immeubles."},
+  {id:'agence', ic:'list', label:'Agence immobilière', note:"Le formulaire demande la référence du mandat et le client représenté. Suivi organisé en portefeuille de demandes."},
+  {id:'notaire', ic:'chart', label:'Notaire', note:"Le formulaire demande la référence de l'acte et les pièces jointes légales. Suivi par dossier notarié."},
+  {id:'amenageur', ic:'qr', label:'Aménageur de zone', note:"Le formulaire demande le périmètre de la zone. Vue cartographique pour anticiper la colocalisation des travaux de génie civil."},
+];
+const NAV = [
+  {id:'accueil', ic:'home', label:'Accueil'},
+  {id:'profil', ic:'user', label:'Qui êtes-vous ?'},
+  {id:'demande', ic:'plus', label:'Nouvelle demande'},
+  {id:'suivi', ic:'list', label:'Suivre mes demandes'},
+  {id:'traitement', ic:'tool', label:'Traitement'},
+  {id:'qr', ic:'qr', label:'Accès QR / APIX'},
+  {id:'dashboard', ic:'chart', label:'Tableau de bord'},
+];
+const STEP_LABELS = ['Nouvelle','Prise en charge','Travaux en cours','Immeuble livré'];
+
+const LOTS_GROUPED = [
+  {id:'L1', name:'Lot 1 — Cité Douane, Guédiawaye', status:'livre', label:'Livré', maj:'02/07/2026', x:28, y:32, buildings:[
+    {id:'B1', name:'Bâtiment A', addr:'Guédiawaye, îlot 4', gps:'14.789 N, -17.393 W', step:4, req:'9'},
+    {id:'B2', name:'Bâtiment B', addr:'Guédiawaye, îlot 5', gps:'14.790 N, -17.392 W', step:4, req:'9'},
+    {id:'B3', name:'Bâtiment C', addr:'Guédiawaye, îlot 6', gps:'14.791 N, -17.391 W', step:4, req:'9'},
+  ]},
+  {id:'L2', name:'Lot 2 — Cité Gendarmerie, Liberté 1', status:'cours', label:'En cours', maj:'04/07/2026', x:55, y:58, buildings:[
+    {id:'B4', name:'Bâtiment A', addr:'Liberté 1, rue 12', gps:'14.723 N, -17.456 W', step:3, req:'10'},
+    {id:'B5', name:'Bâtiment B', addr:'Liberté 1, rue 14', gps:'14.724 N, -17.457 W', step:2, req:'10'},
+  ]},
+  {id:'L3', name:'Lot 3 — Cité Keur Gorgui', status:'nouvelle', label:'Nouvelle', maj:'05/07/2026', x:70, y:38, buildings:[
+    {id:'B6', name:'Bâtiment A', addr:'Cité Keur Gorgui, villa 22', gps:'14.716 N, -17.467 W', step:1, req:'14'},
+  ]},
+];
+const LOTS_SINGLE = [
+  {id:'LP', name:'Ma demande', status:'cours', label:'En cours', maj:'04/07/2026', x:45, y:66, buildings:[
+    {id:'BP', name:'Résidence familiale', addr:'Almadies, villa 22', gps:'14.719 N, -17.489 W', step:2, req:'15'},
+  ]},
+];
+
+const HISTORY = {
+  '9': [['Demande créée','07 avril 2026'],['Prise en charge par l\'équipe EDOC','09 avril 2026'],['Câblage vertical lancé','22 avril 2026'],['Immeuble livré et testé','02 juillet 2026']],
+  '10':[['Demande créée','10 avril 2026'],['Prise en charge par l\'équipe EDOC','13 avril 2026'],['Travaux en cours — câblage vertical','04 juillet 2026']],
+  '14':[['Demande créée','21 avril 2026'],['En attente de qualification','05 juillet 2026']],
+  '15':[['Demande créée','22 avril 2026'],['Prise en charge par l\'équipe EDOC','24 avril 2026'],['Travaux en cours','15 mai 2026']],
+};
+
+const TRAITEMENT_ROWS = [
+  {req:'9', date:'07 avril 2026 15:40', client:'MAGASIN ANGELE', addr:'Guédiawaye', nro:'NRO-DKR-014', plaque:'PLQ-221', pbo:'3', semaine:'S13', motif:'—', comment:'Travaux planifiés, câblage en cours sur le lot 1.', statut:'livre', etage:'6', tel:'779093155'},
+  {req:'10', date:'10 avril 2026 08:56', client:'JIWALL SARL', addr:'Liberté 1', nro:'NRO-DKR-021', plaque:'PLQ-118', pbo:'2', semaine:'S14', motif:'—', comment:'En attente de câblage vertical.', statut:'cours', etage:'4', tel:'770112233'},
+  {req:'14', date:'21 avril 2026 07:49', client:'BELEL IMMO', addr:'Cité Keur Gorgui', nro:'—', plaque:'—', pbo:'0', semaine:'S14', motif:'—', comment:'Dossier en cours de qualification.', statut:'nouvelle', etage:'3', tel:'781234567'},
+  {req:'15', date:'22 avril 2026 18:54', client:'DSI-Agence Sonatel', addr:'Almadies', nro:'NRO-DKR-005', plaque:'PLQ-090', pbo:'1', semaine:'S13', motif:'—', comment:'Travaux terminés, test OK.', statut:'livre', etage:'2', tel:'775554433'},
+];
+
+let state = { profile:null, traitMode:'interne', traitSelected:'9', suiviMode:'list' };
+
+/* ---------------------------- SHELL RENDER ---------------------------- */
+function renderRail(){
+  document.getElementById('rail').innerHTML = NAV.map(n => `
+    <button data-view="${n.id}" onclick="goTo('${n.id}')">${svgIcon(n.ic,16)} ${n.label}</button>
+  `).join('');
+}
+function renderHub(){
+  const items = [
+    {view:'profil', ic:'plus', t:'Soumettre une demande', s:"Nouvelle demande, adaptée à votre profil"},
+    {view:'suivi', ic:'list', t:'Suivre mes demandes', s:"Vue par lot ou par carte, statut en temps réel"},
+    {view:'traitement', ic:'tool', t:'Traitement des demandes', s:"Vue interne / vue client, valider, rejeter, mettre à jour"},
+    {view:'qr', ic:'qr', t:'Accès QR — APIX / Domaine', s:"Scan terrain lors d'une autorisation de travaux"},
+    {view:'dashboard', ic:'chart', t:'Tableau de bord', s:"Indicateurs et pilotage — vue Direction", full:true},
+  ];
+  document.getElementById('hubGrid').innerHTML = items.map(it => `
+    <button class="hub-tile" onclick="goTo('${it.view}')" ${it.full?'style="grid-column:1/-1;"':''}>
+      <span class="icwrap">${svgIcon(it.ic,20)}</span>
+      <div><b>${it.t}</b><small>${it.s}</small></div>
+      <span class="arrow">${svgIcon('plus',16).replace('plus','list')}</span>
+    </button>`).join('').replace(/plus<\/svg>/g,'');
+  // simpler arrow
+  document.querySelectorAll('.hub-tile .arrow').forEach(a=>{a.innerHTML='<svg class="ic" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';});
+}
+
+function goTo(view){
+  document.getElementById('demandeForm').style.display='block';
+  document.getElementById('successBox').classList.remove('show');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.rail button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  closeNotif();
+  if(view==='suivi') renderSuiviView();
+  if(view==='traitement') { renderTraitementList(); renderTraitementDetail(); }
+  if(view==='dashboard') renderDashboard();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------------------------- TOP BAR: dark mode / notif / search ---------------------------- */
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  const icon = document.getElementById('themeIcon');
+  icon.innerHTML = document.body.classList.contains('dark')
+    ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+    : '<path d="M12 3a6 6 0 1 0 9 9 9 9 0 1 1-9-9Z"/>';
+}
+function toggleNotif(){ document.getElementById('notifPanel').classList.toggle('show'); }
+function closeNotif(){ document.getElementById('notifPanel').classList.remove('show'); }
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.top-actions')) closeNotif();
+  if(!e.target.closest('.search-wrap')) document.getElementById('searchResults').classList.remove('show');
+});
+
+function onGlobalSearch(){
+  const q = document.getElementById('globalSearch').value.trim().toLowerCase();
+  const box = document.getElementById('searchResults');
+  if(!q){ box.classList.remove('show'); return; }
+  const allLots = LOTS_GROUPED.concat(LOTS_SINGLE);
+  let results = [];
+  allLots.forEach(lot=>{
+    lot.buildings.forEach(b=>{
+      if(lot.name.toLowerCase().includes(q) || b.name.toLowerCase().includes(q) || b.addr.toLowerCase().includes(q) || b.req.includes(q)){
+        results.push({lotId:lot.id, bId:b.id, title:b.name, sub:lot.name+' · #'+b.req});
+      }
+    });
+  });
+  results = results.slice(0,6);
+  box.innerHTML = results.length
+    ? results.map(r=>`<div class="sr-item" onclick="goTo('suivi');closeSearchAndOpen('${r.lotId}','${r.bId}')"><b>${r.title}</b><span>${r.sub}</span></div>`).join('')
+    : `<div class="search-empty">Aucun résultat pour « ${q} »</div>`;
+  box.classList.add('show');
+}
+function closeSearchAndOpen(lotId,bId){
+  document.getElementById('searchResults').classList.remove('show');
+  document.getElementById('globalSearch').value='';
+  setTimeout(()=>openDetail(lotId,bId), 200);
+}
+
+/* ---------------------------- PROFIL ---------------------------- */
+function renderProfileGrid(){
+  document.getElementById('profileGrid').innerHTML = PROFILES.map(p => `
+    <button class="profile-card" onclick="selectProfile('${p.id}')">
+      <span class="icwrap2">${svgIcon(p.ic,18)}</span><b>${p.label}</b><small>${p.note}</small>
+    </button>`).join('');
+}
+function selectProfile(id){
+  state.profile = PROFILES.find(p=>p.id===id);
+  document.getElementById('profileIcon').innerHTML = svgIcon(state.profile.ic,12);
+  document.getElementById('profileLabel').textContent = state.profile.label;
+  renderDemandeView();
+  goTo('demande');
+}
+
+/* ---------------------------- DEMANDE ---------------------------- */
+function renderDemandeView(){
+  if(!state.profile) return;
+  document.getElementById('contextNote').innerHTML =
+    `${svgIcon('user',15)}<span>Profil sélectionné : <b>${state.profile.label}</b>. ${state.profile.note}</span>`;
+  const dyn = document.getElementById('dynamicFields');
+  if(state.profile.id==='particulier' || state.profile.id==='bailleur'){
+    dyn.innerHTML = `
+      <div class="form-grid">
+        <div class="field full"><label>Adresse de l'immeuble <span class="req">*</span></label><input placeholder="Ex. Cité Keur Gorgui, Villa 12"></div>
+        <div class="field mono"><label>Latitude <span class="req">*</span></label><input placeholder="14.7167"></div>
+        <div class="field mono"><label>Longitude <span class="req">*</span></label><input placeholder="-17.4677"></div>
+        <div class="field"><label>Nombre d'étages</label><input placeholder="0"></div>
+        <div class="field"><label>Nombre d'appartements</label><input placeholder="0"></div>
+      </div>`;
+  } else if(state.profile.id==='promoteur' || state.profile.id==='amenageur'){
+    dyn.innerHTML = `
+      <div class="field full" style="margin-bottom:2px;"><label>Nom du ${state.profile.id==='amenageur'?'périmètre de la zone':'programme'} <span class="req">*</span></label><input placeholder="Ex. Cité Douane — Guédiawaye"></div>
+      <div id="lotsFormContainer"></div>
+      <button class="add-btn" style="margin-top:10px;" onclick="addLotBlock()">${svgIcon('plus',14)} Ajouter un lot</button>`;
+    window._lotCount = 0;
+    addLotBlock();
+  } else if(state.profile.id==='agence'){
+    dyn.innerHTML = `
+      <div class="form-grid">
+        <div class="field full"><label>Référence du mandat <span class="req">*</span></label><input placeholder="Ex. MND-2026-0142"></div>
+        <div class="field full"><label>Client représenté <span class="req">*</span></label><input placeholder="Nom du client"></div>
+        <div class="field full"><label>Adresse de l'immeuble <span class="req">*</span></label><input placeholder="Adresse"></div>
+      </div>`;
+  } else if(state.profile.id==='notaire'){
+    dyn.innerHTML = `
+      <div class="form-grid">
+        <div class="field full"><label>Référence de l'acte <span class="req">*</span></label><input placeholder="Ex. ACT-2026-0087"></div>
+        <div class="field full"><label>Adresse de l'immeuble <span class="req">*</span></label><input placeholder="Adresse"></div>
+        <div class="field full"><label>Pièce jointe légale</label><input type="file"></div>
+      </div>`;
+  }
+}
+function addLotBlock(){
+  window._lotCount++;
+  const n = window._lotCount;
+  const box = document.getElementById('lotsFormContainer');
+  const div = document.createElement('div');
+  div.className = 'lot-block';
+  div.id = 'lotblock-'+n;
+  div.innerHTML = `
+    <div class="lot-block-head"><b>Lot ${n}</b>${n>1?`<button class="rm-btn" onclick="document.getElementById('lotblock-${n}').remove()">Supprimer</button>`:''}</div>
+    <div class="form-grid">
+      <div class="field"><label>Adresse immeuble 1</label><input placeholder="Bâtiment A"></div>
+      <div class="field"><label>Adresse immeuble 2</label><input placeholder="Bâtiment B (optionnel)"></div>
+    </div>`;
+  box.appendChild(div);
+}
+function submitDemande(){
+  document.getElementById('demandeForm').style.display='none';
+  document.getElementById('successBox').classList.add('show');
+  document.getElementById('successId').textContent = 'DEMANDE #A-'+(2200+Math.floor(Math.random()*90));
+}
+
+/* ---------------------------- SUIVI ---------------------------- */
+function stepperHTML(step){
+  const segs = [0,1,2,3].map(i => `<div class="seg ${i<step?'done':(i===step-1?'active':'')}"></div>`).join('');
+  return `<div class="stepper">${segs}</div><span class="step-label">${STEP_LABELS[step-1]}</span>`;
+}
+function statusPillClass(status){ return {livre:'status-livre', cours:'status-cours', nouvelle:'status-nouvelle', prise:'status-prise'}[status]; }
+function statusColor(status){ return {livre:'#0FBFA8', cours:'#FF7900', nouvelle:'#8A97AC', prise:'#2456A6'}[status]; }
+
+function setSuiviMode(mode){
+  state.suiviMode = mode;
+  document.getElementById('vt-list').classList.toggle('active', mode==='list');
+  document.getElementById('vt-map').classList.toggle('active', mode==='map');
+  document.getElementById('lotsContainer').style.display = mode==='list' ? 'block':'none';
+  document.getElementById('mapContainer').style.display = mode==='map' ? 'block':'none';
+  if(mode==='map') renderMapView();
+}
+
+function renderSuiviView(){
+  const isGrouped = !state.profile || ['promoteur','amenageur','agence','bailleur'].includes(state.profile.id);
+  const lots = isGrouped ? LOTS_GROUPED : LOTS_SINGLE;
+  const q = (document.getElementById('suiviSearch').value||'').toLowerCase();
+  const f = document.getElementById('suiviFilter').value;
+
+  const filtered = lots.map(lot => {
+    const buildings = lot.buildings.filter(b => {
+      const matchesQ = !q || lot.name.toLowerCase().includes(q) || b.name.toLowerCase().includes(q) || b.addr.toLowerCase().includes(q) || b.req.includes(q);
+      const stepStatus = ['nouvelle','prise','cours','livre'][b.step-1];
+      const matchesF = !f || stepStatus===f;
+      return matchesQ && matchesF;
+    });
+    return Object.assign({}, lot, {buildings});
+  }).filter(lot => lot.buildings.length>0);
+
+  const container = document.getElementById('lotsContainer');
+  if(filtered.length===0){
+    container.innerHTML = `<div class="empty-state">${svgIcon('list',34)}<div>Aucune demande ne correspond à votre recherche.</div></div>`;
+  } else {
+    container.innerHTML = filtered.map((lot, li) => `
+      <div class="lot-card" id="lot-${li}">
+        <div class="lot-summary" onclick="toggleLot(${li})">
+          <div class="blueprint"></div>
+          <div class="meta"><b>${lot.name}</b><span>${lot.buildings.length} immeuble${lot.buildings.length>1?'s':''} · MAJ ${lot.maj}</span></div>
+          <span class="status-pill ${statusPillClass(lot.status)}">${lot.label}</span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="lot-body">
+          ${lot.buildings.map(b => `
+            <div class="bldg-row" onclick="openDetail('${lot.id}','${b.id}')">
+              <div class="addr"><b>${b.name}</b><span>${b.addr} · #${b.req}</span></div>
+              ${stepperHTML(b.step)}
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+  if(state.suiviMode==='map') renderMapView();
+}
+function toggleLot(i){ document.getElementById('lot-'+i).classList.toggle('open'); }
+
+function renderMapView(){
+  const isGrouped = !state.profile || ['promoteur','amenageur','agence','bailleur'].includes(state.profile.id);
+  const lots = isGrouped ? LOTS_GROUPED : LOTS_SINGLE;
+  const pins = lots.map(lot => `<circle cx="${lot.x*4}" cy="${lot.y*3.4}" r="9" fill="${statusColor(lot.status)}" stroke="#0D1626" stroke-width="2" style="cursor:pointer" onclick="toggleLot(0);document.getElementById('vt-list').click();"/>`).join('');
+  const labels = lots.map(lot => `<div class="map-pin-label" style="left:${lot.x}%;top:${lot.y}%;">${lot.name.split('—')[0].trim()} · ${lot.label}</div>`).join('');
+  document.getElementById('mapContainer').innerHTML = `
+    <div class="map-wrap">
+      <svg viewBox="0 0 400 340" preserveAspectRatio="none">
+        <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="rgba(255,255,255,0.05)"/></pattern></defs>
+        <rect width="400" height="340" fill="#0D1626"/>
+        <rect width="400" height="340" fill="url(#grid)"/>
+        <path d="M0 180 Q 120 120 220 190 T 400 160" stroke="rgba(15,191,168,0.35)" stroke-width="2" fill="none"/>
+        ${pins}
+      </svg>
+      ${labels}
+    </div>
+    <p style="font-size:11px;color:var(--ink-soft);margin-top:10px;">Carte schématique — positions indicatives. Cliquez un point pour ouvrir le lot en vue liste.</p>`;
+}
+
+function openDetail(lotId, bId){
+  const allLots = LOTS_GROUPED.concat(LOTS_SINGLE);
+  const lot = allLots.find(l=>l.id===lotId);
+  const b = lot.buildings.find(x=>x.id===bId);
+  const hist = HISTORY[b.req] || [];
+  document.getElementById('drawerContent').innerHTML = `
+    <div class="drawer-head"><b>${b.name}</b><button onclick="closeDrawer()">✕</button></div>
+    <div class="fiche-row"><b>Demande n°</b><span>#${b.req}</span></div>
+    <div class="fiche-row"><b>Lot / Programme</b><span>${lot.name}</span></div>
+    <div class="fiche-row"><b>Adresse</b><span>${b.addr}</span></div>
+    <div class="fiche-row"><b>Coordonnées GPS</b><span>${b.gps}</span></div>
+    <div class="fiche-row"><b>Statut</b><span>${STEP_LABELS[b.step-1]}</span></div>
+    ${stepperHTML(b.step)}
+    <div class="timeline"><h4>Historique</h4>
+      ${hist.map(h=>`<div class="tl-item"><div class="tl-dot"></div><div><p>${h[0]}</p><span>${h[1]}</span></div></div>`).join('') || '<p style="font-size:12px;color:var(--ink-soft);">Aucun historique disponible.</p>'}
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeDrawer(){ document.getElementById('overlay').classList.remove('show'); }
+
+/* ---------------------------- TRAITEMENT ---------------------------- */
+function setTraitementMode(mode){
+  state.traitMode = mode;
+  document.getElementById('btn-interne').classList.toggle('active', mode==='interne');
+  document.getElementById('btn-client').classList.toggle('active', mode==='client');
+  renderTraitementDetail();
+}
+function renderTraitementList(){
+  const q = (document.getElementById('traitSearch').value||'').toLowerCase();
+  const rows = TRAITEMENT_ROWS.filter(r => !q || r.req.includes(q) || r.client.toLowerCase().includes(q) || r.addr.toLowerCase().includes(q));
+  document.getElementById('traitList').innerHTML = rows.map(r => `
+    <div class="req-item ${state.traitSelected===r.req?'sel':''}" onclick="selectTraitement('${r.req}')">
+      <b>N° ${r.req} — ${r.client}</b><span>${r.date}</span>
+    </div>`).join('') || `<div class="req-item">Aucun résultat</div>`;
+}
+function selectTraitement(req){ state.traitSelected = req; renderTraitementList(); renderTraitementDetail(); }
+function renderTraitementDetail(){
+  const r = TRAITEMENT_ROWS.find(x=>x.req===state.traitSelected) || TRAITEMENT_ROWS[0];
+  const box = document.getElementById('traitDetail');
+  const statusIdx = {nouvelle:1,prise:2,cours:3,livre:4}[r.statut];
+  if(state.traitMode==='interne'){
+    box.innerHTML = `
+      <div class="kv-grid">
+        <div class="kv"><label>Nom immeuble</label><div>${r.client}</div></div>
+        <div class="kv"><label>Adresse</label><div>${r.addr}</div></div>
+        <div class="kv"><label>NRO / Plaque</label><div>${r.nro} / ${r.plaque}</div></div>
+        <div class="kv"><label>Nombre de PBO</label><div>${r.pbo}</div></div>
+        <div class="kv"><label>Nombre d'étage</label><div>${r.etage}</div></div>
+        <div class="kv"><label>Semaine de livraison</label><div>${r.semaine}</div></div>
+        <div class="kv"><label>Contact client</label><div>${r.tel}</div></div>
+        <div class="kv"><label>Motif rejet</label><div>${r.motif}</div></div>
+        <div class="kv" style="grid-column:1/-1;"><label>Commentaire de prise en charge</label><div>${r.comment}</div></div>
+      </div>
+      <div class="save-row">
+        <button class="btn-save" onclick="alert('Statut mis à jour (maquette).')">Enregistrer</button>
+        <button class="btn-danger" onclick="alert('Demande rejetée (maquette).')">Rejeter</button>
+      </div>`;
+  } else {
+    box.innerHTML = `
+      <div class="client-card">
+        <h3>${r.client}</h3>
+        <p>${r.addr} — demande n° ${r.req}</p>
+        <div class="fiche-row"><b>Statut</b><span class="badge-ok">${STEP_LABELS[statusIdx-1]}</span></div>
+        <div class="fiche-row"><b>Semaine de livraison estimée</b><span>${r.semaine}</span></div>
+        <div class="fiche-row"><b>Contact référent</b><span>edoc@orange-sonatel.com</span></div>
+      </div>`;
+  }
+}
+
+/* ---------------------------- DASHBOARD ---------------------------- */
+const PROFILE_COUNTS = [
+  {label:'Particuliers', n:52, color:'#FF7900'},
+  {label:'Bailleurs', n:24, color:'#0FBFA8'},
+  {label:'Promoteurs', n:31, color:'#2456A6'},
+  {label:'Agences', n:12, color:'#B15900'},
+  {label:'Notaires', n:6, color:'#8A6FD1'},
+  {label:'Aménageurs', n:3, color:'#5C6773'},
+];
+const LOT_STATUS_COUNTS = [ {label:'Livrés', n:7, color:'#0FBFA8'}, {label:'En cours', n:19, color:'#FF7900'}, {label:'Nouveaux', n:9, color:'#8A97AC'} ];
+const ZONES = [
+  {name:'Cité Douane — Guédiawaye', status:'Génie civil planifié'},
+  {name:'Cité Gendarmerie — Liberté 1', status:'Travaux en cours'},
+  {name:'Zone Diamniadio — lot 4', status:'Étude de faisabilité'},
+];
+function renderDashboard(){
+  const max = Math.max.apply(null, PROFILE_COUNTS.map(p=>p.n));
+  document.getElementById('barChart').innerHTML = PROFILE_COUNTS.map(p => `
+    <div class="bar-row">
+      <span class="lbl">${p.label}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(p.n/max*100).toFixed(0)}%; background:${p.color}"></div></div>
+      <span class="n">${p.n}</span>
+    </div>`).join('') + `<div class="legend">${PROFILE_COUNTS.map(p=>`<span><i style="background:${p.color}"></i>${p.label}</span>`).join('')}</div>`;
+
+  const total = LOT_STATUS_COUNTS.reduce((a,b)=>a+b.n,0);
+  let acc = 0;
+  const R = 42, C = 2*Math.PI*R;
+  const arcs = LOT_STATUS_COUNTS.map(s=>{
+    const frac = s.n/total;
+    const dash = frac*C;
+    const el = `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${s.color}" stroke-width="14" stroke-dasharray="${dash} ${C-dash}" stroke-dashoffset="${-acc}" />`;
+    acc += dash;
+    return el;
+  }).join('');
+  document.getElementById('donutChart').innerHTML = `
+    <div class="donut-wrap">
+      <svg width="120" height="120" viewBox="0 0 120 120" style="transform:rotate(-90deg)">${arcs}</svg>
+      <div class="donut-legend">${LOT_STATUS_COUNTS.map(s=>`<div><i style="background:${s.color}"></i>${s.label} — ${s.n} (${Math.round(s.n/total*100)}%)</div>`).join('')}</div>
+    </div>`;
+  document.getElementById('zoneList').innerHTML = ZONES.map(z => `<div class="zrow"><span>${z.name}</span><b style="font-weight:600;">${z.status}</b></div>`).join('');
+}
+
+/* ---------------------------- INIT ---------------------------- */
+renderRail();
+renderHub();
+renderProfileGrid();
+goTo('accueil');
+</script>
+</body>
+</html>
